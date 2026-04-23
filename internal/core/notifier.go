@@ -35,12 +35,24 @@ func (m *NotificationManager) ProcessDueReminders(ctx context.Context, n Notifie
 	}
 
 	for _, r := range reminders {
-		// Mark as notified immediately to avoid double processing if Notify takes time
+		// Mark as notified immediately with a short back-off so we don't
+		// re-process the same reminder on the next scheduler tick while
+		// we're still sending the notification (which may take seconds).
+		//
+		// The final "due" time is decided by the user's action on the
+		// notification (Done/Snooze/Reschedule) — this back-off is just
+		// protection against double-fires between the tick and that action.
 		nextTry := time.Now().Add(1 * time.Minute)
 		if err := m.repo.MarkAsNotified(ctx, r.ID, nextTry); err != nil {
 			m.logger.Error("failed to mark reminder as notified", "id", r.ID, "error", err)
 			continue
 		}
+		// Keep the in-memory copy in sync with the DB so the subsequent
+		// Update() below (which also writes notify_at) does NOT regress
+		// the back-off we just persisted. Without this the reminder would
+		// re-appear in GetDue on every scheduler tick, causing duplicate
+		// notifications until the user reacts.
+		r.NotifyAt = nextTry
 
 		// Delete old notification message if exists
 		if r.LastMessageID != 0 {

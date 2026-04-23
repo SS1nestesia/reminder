@@ -143,12 +143,13 @@ func (r *reminderRepo) Add(ctx context.Context, rem *Reminder) error {
 		rem.ChatID, rem.AuthorID, rem.Text, rem.NotifyAt.UTC(), rem.Interval, rem.Weekdays,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("reminderRepo.Add: exec: %w", err)
 	}
 	id, err := res.LastInsertId()
-	if err == nil {
-		rem.ID = id
+	if err != nil {
+		return fmt.Errorf("reminderRepo.Add: last insert id: %w", err)
 	}
+	rem.ID = id
 	return nil
 }
 
