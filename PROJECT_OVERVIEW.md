@@ -97,3 +97,54 @@ Handles the 3-way handshake for friendship:
 1. **Invite**: `t.me/bot?start=invite_<ID>` link generation.
 2. **Acceptance**: Targeted callback handling.
 3. **Validation**: Every social reminder creation checks mutual friendship status.
+
+---
+
+## 🤖 Finite State Machine (FSM)
+
+The bot manages user interactions via the following states in `user_states.state`:
+
+| State | Prefix/Value | Context |
+|-------|--------------|---------|
+| `(empty)` | `""` | Idle / Main Menu |
+| `Waiting Text` | `waiting_text` | Waiting for reminder description (Self) |
+| `Waiting Time` | `waiting_time` | Waiting for time string (Self) |
+| `Waiting Repeat` | `waiting_repeat` | Waiting for recurrence selection (Daily/Weekly/Custom) |
+| `Custom Interval`| `custom:` | Waiting for days/hours interval (e.g., `custom:12`) |
+| `Editing` | `editing:` | Changing existing reminder text/time |
+| `Rescheduling` | `reschedule:` | Quick time update via notification button |
+| `Edit Repeat` | `edit_repeat:` | Changing recurrence pattern of existing reminder |
+| `Weekdays` | `weekdays:` | Selecting specific days (Mon-Sun bitmask) |
+| `Waiting TZ` | `waiting_timezone` | Waiting for city name or offset |
+| `Friend Text` | `waiting_text_for:` | Waiting for text for friend (e.g., `waiting_text_for:123`) |
+| `Friend Time` | `waiting_time_for:` | Waiting for time for friend (e.g., `waiting_time_for:123`) |
+
+---
+
+## 📏 Coding Standards & Style Guide
+
+### 1. Advanced Golang Patterns (Golang-Pro)
+- **Context First**: Every I/O or DB call MUST accept `context.Context`. Use `context.WithTimeout` for all external requests.
+- **Error Wrapping**: Always use `fmt.Errorf("...: %w", err)` to preserve the error chain. Avoid `panic()`.
+- **Interface Segregation**: Depend on small interfaces (e.g., `ReminderRepository`) rather than concrete structs to facilitate testing.
+
+### 2. Transactional Reliability (DBOS Principles)
+- **Step-based Execution**: Decompose complex operations into atomic "steps". If a step fails, the system must be able to resume or rollback.
+- **Idempotency**: Notification delivery and state transitions must be idempotent. Sending the same reminder twice should be handled by `last_message_id` checks.
+- **Durable State**: Use the database as the source of truth for the FSM. Do not keep critical state in memory.
+
+### 3. Durable Orchestration (Temporal Principles)
+- **Strict Determinism**: Business logic in `internal/core` MUST be deterministic.
+    - ❌ No `time.Now()`. Use an injected time or the `notify_at` field.
+    - ❌ No random numbers.
+    - ❌ No direct network calls inside logic functions.
+- **Scheduler Durability**: The background `Scheduler` loop is a long-running "workflow". It must handle transient DB errors with retries and maintain its position even after a crash.
+- **Activities vs. Workflows**: 
+    - **Workflows** (Logic): Calculate next trigger time, update FSM.
+    - **Activities** (I/O): Send Telegram message, Query DB.
+
+### 4. Package Responsibilities
+- `internal/core`: The "Brain". Pure functions for time parsing, recurrence bitmask logic, and trigger calculations.
+- `internal/storage`: The "Memory". Repository implementations with SQL queries. No business logic here.
+- `internal/telegram`: The "Nervous System". Handlers for callbacks/commands. Orchestrates storage and core logic.
+- `internal/telegram/keyboards`: UI definitions.
