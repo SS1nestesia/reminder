@@ -6,7 +6,7 @@ reminder_bot.db
 # Build binaries and temporary Go files
 cmd/bot/bot
 bot_binary
-bot
+/bot
 reminder-bot-linux
 bin/
 dist/
