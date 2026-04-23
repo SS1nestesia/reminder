@@ -1,0 +1,93 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+  go: "1.25"
+
+linters:
+  default: none
+  enable:
+    - errcheck       # report unchecked errors
+    - govet          # standard go vet analyzers
+    - ineffassign    # detect useless assignments
+    - staticcheck    # bugs, performance, style
+    - unused         # unused symbols
+    - misspell       # common misspellings
+    - gocritic       # opinionated bug / style checks
+    - revive         # golint successor
+    - gosec          # security problems
+    - nolintlint     # require a reason on nolint directives
+
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: if-return
+        - name: increment-decrement
+        - name: var-declaration
+        - name: var-naming
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: redefines-builtin-id
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      disabled-checks:
+        - commentFormatting
+        - hugeParam
+        - rangeValCopy # harmless over small structs
+
+    gosec:
+      excludes:
+        - G404 # crypto-quality randomness not required
+
+    misspell:
+      locale: US
+      ignore-rules:
+        - мин
+        - час
+        - день
+
+  exclusions:
+    warn-unused: true
+    presets:
+      - common-false-positives
+      - legacy
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+    rules:
+      # Test files routinely use seeded time, errcheck-heavy patterns, and
+      # long line literals. Relax the strictest linters there.
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+          - gocritic
+          - revive
+      # main.go is thin wiring and benefits from minimal abstraction.
+      - path: cmd/bot/main\.go
+        linters:
+          - gocritic
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

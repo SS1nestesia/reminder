@@ -8,6 +8,13 @@ import (
 	"reminder-bot/internal/storage"
 )
 
+// DefaultLoc is the service-wide fallback timezone (MSK, UTC+3).
+// It is read-only — do not mutate at runtime.
+var DefaultLoc = time.FixedZone("MSK", 3*60*60)
+
+// ReminderService is the application-layer orchestrator for reminder CRUD,
+// snooze/reschedule, and user timezone resolution. It depends only on the
+// storage.Storage interface, making it easy to test with mocks.
 type ReminderService struct {
 	repo     storage.ReminderRepository
 	sessions storage.SessionRepository
@@ -153,10 +160,6 @@ func (s *ReminderService) SnoozeReminder(ctx context.Context, chatID int64, id i
 		return nil
 	})
 }
-
-var (
-	DefaultLoc = time.FixedZone("MSK", 3*60*60)
-)
 
 // AddReminderForFriend creates a reminder owned by targetChatID but authored by authorChatID.
 func (s *ReminderService) AddReminderForFriend(ctx context.Context, authorChatID, targetChatID int64, text string, notifyAt time.Time) (int64, error) {
