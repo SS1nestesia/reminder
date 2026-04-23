@@ -148,3 +148,73 @@ The bot manages user interactions via the following states in `user_states.state
 - `internal/storage`: The "Memory". Repository implementations with SQL queries. No business logic here.
 - `internal/telegram`: The "Nervous System". Handlers for callbacks/commands. Orchestrates storage and core logic.
 - `internal/telegram/keyboards`: UI definitions.
+
+---
+
+## 🧪 Exhaustive Test Cases (AI-Ready)
+
+### Section A: Creation & Parsing
+1. **Case: Absolute Time**
+    - Input: "Позвонить врачу 25 декабря 14:30"
+    - Expected: `notify_at` set to Dec 25, 14:30 in user's local time, converted to UTC.
+2. **Case: Relative Time**
+    - Input: "Забрать посылку через 3 часа"
+    - Expected: `notify_at` = `current_time + 3h`.
+3. **Case: Malformed Time**
+    - Input: "Напомни завтра в 26:00"
+    - Expected: Error message "Не удалось распознать время", state remains `waiting_time`.
+4. **Case: Multilingual NLP**
+    - Input: "Remind me in 15 minutes" (User language set to RU but input EN)
+    - Expected: Correct parsing due to `ru.All` and `en.All` parser support.
+
+### Section B: Recurrence & Scheduling
+5. **Case: Weekly Bitmask**
+    - Action: Select Mon, Wed, Fri for "Gym".
+    - Expected: `weekdays` = 21 (`1 + 4 + 16`). `notify_at` points to the next occurrence.
+6. **Case: Daily Rollover**
+    - Context: Daily reminder at 09:00. Trigger time reached.
+    - Expected: `notify_at` updated to `tomorrow 09:00`. Entry is NOT deleted.
+7. **Case: Snooze During Recurrence**
+    - Action: Daily reminder triggers. User clicks "Отложить на 1ч".
+    - Expected: `notify_at` set to `current_trigger + 1h`. After this snooze triggers, the *next* occurrence returns to original 09:00 schedule.
+
+### Section C: Social & Friends
+8. **Case: Deep-link Invitation**
+    - User A: "Пригласить друга" -> gets `t.me/bot?start=invite_A`.
+    - User B: Clicks link.
+    - Expected: `friends` row `(A, B, 'pending')`. A sees notification.
+9. **Case: Author Cleanup on Unfriend**
+    - Context: A set reminder for B. B removes A from friends.
+    - Expected: `friends` rows deleted. Reminder remains for B, but `author_id` becomes 0.
+10. **Case: Mutual Reminder Notification**
+    - Action: A creates reminder for B.
+    - Expected: B receives immediate message: "🔔 Друг A создал для вас напоминание...".
+
+### Section D: Edge Cases & Reliability
+11. **Case: Timezone Shift**
+    - User sets reminder for "10:00" while in UTC+3. Changes TZ to UTC+4.
+    - Expected: Reminder should trigger at "10:00" in the NEW timezone. Core logic must recalculate trigger from stored text/rules or adjust UTC offset.
+12. **Case: DST Transition**
+    - User in London (GMT/BST) sets reminder for "09:00" on the day of transition.
+    - Expected: Logic must ensure wall-clock 09:00 consistency regardless of +1/-1 hour shift.
+13. **Case: Concurrent Triggers**
+    - Context: 50 reminders scheduled for the exact same second.
+    - Expected: Scheduler loop handles all in a single batch without skipping any or blocking the loop.
+14. **Case: Friendship Re-creation**
+    - Action: A deletes B. Later A invites B again.
+    - Expected: System handles existing "deleted" or "pending" rows correctly without UNIQUE constraint violations.
+15. **Case: Malformed Deep-link**
+    - Action: User clicks `t.me/bot?start=invite_999999999` (ID does not exist).
+    - Expected: Bot sends "Пользователь не найден" and returns to main menu gracefully.
+16. **Case: Snooze Chain**
+    - Action: User snoozes for 5m. It triggers. User snoozes *again* for 1h.
+    - Expected: `notify_at` is updated relative to the *last* trigger, not the original one.
+
+---
+
+## 📝 Critical Instructions for AI Agents
+1. **Context Awareness**: Always check `TECHNICAL_GUIDE` (now merged here) before proposing changes.
+2. **GitNexus First**: Use `gitnexus_impact` before editing any function in `internal/core`.
+3. **UTC Rule**: Never store local time in the database. Always use `.UTC()`.
+4. **FSM Safety**: If adding a new state, you MUST update `text_handlers.go` and `callbacks.go`.
+5. **Fresh Index**: Run `/usr/local/bin/gitnexus analyze` after significant changes to DB schema or FSM logic.
