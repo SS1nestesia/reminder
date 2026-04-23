@@ -563,10 +563,12 @@ type dummyTestStorage struct {
 	repo storage.ReminderRepository
 	sess storage.SessionRepository
 }
+
 func (d *dummyTestStorage) Reminders() storage.ReminderRepository { return d.repo }
-func (d *dummyTestStorage) Sessions() storage.SessionRepository { return d.sess }
-func (d *dummyTestStorage) Friends() storage.FriendRepository   { return nil }
-func (d *dummyTestStorage) Close() error { return nil }
+func (d *dummyTestStorage) Sessions() storage.SessionRepository   { return d.sess }
+func (d *dummyTestStorage) Friends() storage.FriendRepository     { return nil }
+func (d *dummyTestStorage) Users() storage.UserRepository         { return nil }
+func (d *dummyTestStorage) Close() error                          { return nil }
 
 func TestNewReminderService(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))

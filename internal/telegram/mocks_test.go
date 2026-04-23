@@ -457,5 +457,5 @@ func (m *mockBot) AnswerCallbackQuery(ctx context.Context, params *telego.Answer
 }
 
 func (m *mockBot) GetChat(ctx context.Context, params *telego.GetChatParams) (*telego.ChatFullInfo, error) {
-	return &telego.ChatFullInfo{Chat: telego.Chat{ID: params.ChatID.ID}}, nil
+	return &telego.ChatFullInfo{ID: params.ChatID.ID}, nil
 }
