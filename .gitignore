@@ -1,0 +1,57 @@
+# SQLite databases
+*.db*
+**/*.db*
+reminder_bot.db
+
+# Build binaries and temporary Go files
+cmd/bot/bot
+bot_binary
+bot
+reminder-bot-linux
+bin/
+dist/
+build/
+*.exe
+*.test
+__debug_bin
+internal/core/c.out
+
+# IDEs
+.idea/
+.vscode/
+.DS_Store
+**/ .DS_Store
+.cursor/
+.cursorrules
+.windsurfrules
+.history/
+
+# Logs and agent artifacts
+*.log
+logs/
+.agent/
+.claude/
+.kiro/
+.gitnexus/
+.mcp.json
+.opencode.json
+scratch/
+coverage.out
+coverage_func.txt
+*.out
+
+# Environment and Credentials
+.env*
+!.env.example
+
+# Dependency directories
+vendor/
+.venv/
+node_modules/
+
+# Worktrees (if used project-locally)
+.worktrees/
+worktrees/
+
+# Knowledge Graph (CRG & GitNexus)
+.code-review-graph/
