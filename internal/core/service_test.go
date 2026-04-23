@@ -49,7 +49,7 @@ func (m *mockFullRepo) Update(ctx context.Context, r *storage.Reminder) error {
 	return nil
 }
 
-func (m *mockFullRepo) Delete(ctx context.Context, chatID int64, id int64) error {
+func (m *mockFullRepo) Delete(ctx context.Context, chatID, id int64) error {
 	r, ok := m.reminders[id]
 	if !ok || r.ChatID != chatID {
 		return storage.ErrNotFound
@@ -116,7 +116,7 @@ func (m *mockFullRepo) GetFriendReminders(ctx context.Context, chatID int64) ([]
 	return list, nil
 }
 
-func (m *mockFullRepo) ClearAuthor(ctx context.Context, authorID int64, targetChatID int64) error {
+func (m *mockFullRepo) ClearAuthor(ctx context.Context, authorID, targetChatID int64) error {
 	for id, r := range m.reminders {
 		if r.AuthorID == authorID && r.ChatID == targetChatID {
 			r.AuthorID = 0
@@ -141,7 +141,7 @@ func (m *mockSessionRepo) Cleanup(ctx context.Context, olderThan time.Time) erro
 	return nil
 }
 
-func (m *mockSessionRepo) SetPendingReminderID(ctx context.Context, chatID int64, id int64) error {
+func (m *mockSessionRepo) SetPendingReminderID(ctx context.Context, chatID, id int64) error {
 	m.pendingID = id
 	return nil
 }
@@ -466,7 +466,6 @@ func TestUpdateRecurrence_WrongChatID(t *testing.T) {
 // ParseIDFromState
 // ==========================================
 
-
 // ==========================================
 // State management (ClearState clears pending text)
 // ==========================================
@@ -550,9 +549,9 @@ func TestSnoozeReminder_Success(t *testing.T) {
 func TestSnoozeReminder_WrongChatID(t *testing.T) {
 	ctx := context.Background()
 	s, _, _ := newTestService()
-	
+
 	id, _ := s.AddReminder(ctx, 1, "Test", time.Now())
-	
+
 	err := s.SnoozeReminder(ctx, 2, id, 15*time.Minute)
 	if err == nil {
 		t.Error("expected error, got nil")

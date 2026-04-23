@@ -105,8 +105,8 @@ func (h *Handlers) buildListText(ctx context.Context, chatID int64, rems []stora
 	sb.WriteString("📋 <b>Ваши напоминания</b>\n\n")
 	for i, r := range rems {
 		timeStr := r.NotifyAt.In(userLoc).Format("15:04 02.01")
-		sb.WriteString(fmt.Sprintf("🔸 %d. <b>%s</b>\n   ⏰ %s\n   🔄 Повтор: %s\n\n",
-			i+1, html.EscapeString(r.Text), timeStr, core.FormatRecurrence(r)))
+		fmt.Fprintf(&sb, "🔸 %d. <b>%s</b>\n   ⏰ %s\n   🔄 Повтор: %s\n\n",
+			i+1, html.EscapeString(r.Text), timeStr, core.FormatRecurrence(r))
 	}
 	return sb.String()
 }
@@ -267,7 +267,6 @@ func WeekdaysKeyboard(mask int) telego.ReplyMarkup {
 		}
 		row1 = append(row1, tu.InlineKeyboardButton(text).WithCallbackData(fmt.Sprintf("wd:%d", i)))
 	}
-	rows = append(rows, row1)
 
 	var row2 []telego.InlineKeyboardButton
 	for i := 4; i < 7; i++ {
@@ -277,11 +276,14 @@ func WeekdaysKeyboard(mask int) telego.ReplyMarkup {
 		}
 		row2 = append(row2, tu.InlineKeyboardButton(text).WithCallbackData(fmt.Sprintf("wd:%d", i)))
 	}
-	rows = append(rows, row2)
 
-	rows = append(rows, tu.InlineKeyboardRow(
-		tu.InlineKeyboardButton("✅ Готово").WithCallbackData("wd:done"),
-	))
+	rows = append(rows,
+		row1,
+		row2,
+		tu.InlineKeyboardRow(
+			tu.InlineKeyboardButton("✅ Готово").WithCallbackData("wd:done"),
+		),
+	)
 
 	return tu.InlineKeyboard(rows...)
 }

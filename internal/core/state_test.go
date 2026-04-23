@@ -209,4 +209,3 @@ func TestNewStateManager(t *testing.T) {
 		t.Fatal("NewStateManager returned nil")
 	}
 }
-

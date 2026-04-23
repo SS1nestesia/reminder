@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mymmrac/telego"
 	"reminder-bot/internal/storage"
+
+	"github.com/mymmrac/telego"
 )
 
 // --- Mock Service ---
@@ -20,12 +21,12 @@ type mockService struct {
 	userLoc   *time.Location
 
 	// Error injection
-	addErr      error
-	getErr      error
-	deleteErr   error
-	completeErr error
-	reschedErr  error
-	snoozeErr   error
+	addErr       error
+	getErr       error
+	deleteErr    error
+	completeErr  error
+	reschedErr   error
+	snoozeErr    error
 	updateTxtErr error
 	updateIntErr error
 	updateWdErr  error
@@ -78,7 +79,7 @@ func (m *mockService) GetReminders(_ context.Context, chatID int64) ([]storage.R
 	return m.reminders[chatID], nil
 }
 
-func (m *mockService) DeleteReminder(_ context.Context, chatID int64, id int64) error {
+func (m *mockService) DeleteReminder(_ context.Context, chatID, id int64) error {
 	if m.deleteErr != nil {
 		return m.deleteErr
 	}
@@ -106,7 +107,7 @@ func (m *mockService) SnoozeReminder(_ context.Context, _ int64, _ int64, _ time
 	return m.snoozeErr
 }
 
-func (m *mockService) UpdateReminderText(_ context.Context, chatID int64, id int64, text string) error {
+func (m *mockService) UpdateReminderText(_ context.Context, chatID, id int64, text string) error {
 	if m.updateTxtErr != nil {
 		return m.updateTxtErr
 	}
@@ -182,29 +183,47 @@ func (m *mockService) UpdateFriendReminderTime(_ context.Context, _ int64, _ int
 // --- Mock Friend Service ---
 type mockFriendService struct{}
 
-func (m *mockFriendService) SendFriendRequest(ctx context.Context, userID, friendID int64) error { return nil }
-func (m *mockFriendService) AcceptFriendRequest(ctx context.Context, fromUserID, toUserID int64) error { return nil }
-func (m *mockFriendService) RejectFriendRequest(ctx context.Context, fromUserID, toUserID int64) error { return nil }
-func (m *mockFriendService) RemoveFriend(ctx context.Context, userID, friendID int64) error { return nil }
-func (m *mockFriendService) GetFriends(ctx context.Context, userID int64) ([]storage.Friend, error) { return nil, nil }
-func (m *mockFriendService) GetPendingRequests(ctx context.Context, userID int64) ([]storage.Friend, error) { return nil, nil }
-func (m *mockFriendService) IsFriend(ctx context.Context, userID, friendID int64) (bool, error) { return true, nil }
-func (m *mockFriendService) HasPendingRequest(ctx context.Context, userID, friendID int64) (bool, error) { return false, nil }
+func (m *mockFriendService) SendFriendRequest(ctx context.Context, userID, friendID int64) error {
+	return nil
+}
+func (m *mockFriendService) AcceptFriendRequest(ctx context.Context, fromUserID, toUserID int64) error {
+	return nil
+}
+func (m *mockFriendService) RejectFriendRequest(ctx context.Context, fromUserID, toUserID int64) error {
+	return nil
+}
+func (m *mockFriendService) RemoveFriend(ctx context.Context, userID, friendID int64) error {
+	return nil
+}
+func (m *mockFriendService) GetFriends(ctx context.Context, userID int64) ([]storage.Friend, error) {
+	return nil, nil
+}
+func (m *mockFriendService) GetPendingRequests(ctx context.Context, userID int64) ([]storage.Friend, error) {
+	return nil, nil
+}
+func (m *mockFriendService) IsFriend(ctx context.Context, userID, friendID int64) (bool, error) {
+	return true, nil
+}
+func (m *mockFriendService) HasPendingRequest(ctx context.Context, userID, friendID int64) (bool, error) {
+	return false, nil
+}
 func (m *mockFriendService) UpsertUser(ctx context.Context, user *storage.User) error { return nil }
-func (m *mockFriendService) GetUserInfo(ctx context.Context, chatID int64) (*storage.User, error) { return nil, nil }
+func (m *mockFriendService) GetUserInfo(ctx context.Context, chatID int64) (*storage.User, error) {
+	return nil, nil
+}
 
 // --- Mock State ---
 
 type mockState struct {
-	mu            sync.Mutex
-	states        map[int64]string
-	pendingText   map[int64]string
-	pendingID     map[int64]int64
-	sessionMsgs   map[int64]int
-	timezones     map[int64]string
+	mu          sync.Mutex
+	states      map[int64]string
+	pendingText map[int64]string
+	pendingID   map[int64]int64
+	sessionMsgs map[int64]int
+	timezones   map[int64]string
 
-	setStateErr   error
-	clearErr      error
+	setStateErr error
+	clearErr    error
 }
 
 func newMockState() *mockState {
@@ -256,7 +275,7 @@ func (m *mockState) SetWaitingRecurrenceState(_ context.Context, chatID int64) e
 	return m.SetState(context.Background(), chatID, "waiting_repeat")
 }
 
-func (m *mockState) SetWaitingWeekdaysState(_ context.Context, chatID int64, id int64) error {
+func (m *mockState) SetWaitingWeekdaysState(_ context.Context, chatID, id int64) error {
 	return m.SetState(context.Background(), chatID, "weekdays:")
 }
 
@@ -264,15 +283,15 @@ func (m *mockState) SetWaitingTimezoneState(_ context.Context, chatID int64) err
 	return m.SetState(context.Background(), chatID, "waiting_timezone")
 }
 
-func (m *mockState) SetEditingState(_ context.Context, chatID int64, id int64) error {
+func (m *mockState) SetEditingState(_ context.Context, chatID, id int64) error {
 	return m.SetState(context.Background(), chatID, "editing:"+formatInt(id))
 }
 
-func (m *mockState) SetRescheduleState(_ context.Context, chatID int64, id int64) error {
+func (m *mockState) SetRescheduleState(_ context.Context, chatID, id int64) error {
 	return m.SetState(context.Background(), chatID, "reschedule:"+formatInt(id))
 }
 
-func (m *mockState) SetEditRepeatState(_ context.Context, chatID int64, id int64) error {
+func (m *mockState) SetEditRepeatState(_ context.Context, chatID, id int64) error {
 	return m.SetState(context.Background(), chatID, "edit_repeat:"+formatInt(id))
 }
 
@@ -289,7 +308,7 @@ func (m *mockState) GetPendingText(_ context.Context, chatID int64) (string, err
 	return m.pendingText[chatID], nil
 }
 
-func (m *mockState) SetPendingReminder(_ context.Context, chatID int64, id int64) error {
+func (m *mockState) SetPendingReminder(_ context.Context, chatID, id int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.pendingID[chatID] = id

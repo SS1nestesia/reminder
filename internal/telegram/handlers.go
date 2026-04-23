@@ -49,7 +49,7 @@ func NewHandlers(b BotAPI, service ReminderServicer, friends FriendServicer, par
 }
 
 // callbackID parses a reminder ID from callback data after the given prefix.
-func callbackID(data string, prefix string) (int64, bool) {
+func callbackID(data, prefix string) (int64, bool) {
 	if !strings.HasPrefix(data, prefix) {
 		return 0, false
 	}
@@ -62,7 +62,6 @@ func (h *Handlers) callbackCtx(ctx *th.Context, query telego.CallbackQuery) (cha
 	h.answer(ctx.Context(), query.ID)
 	return query.Message.GetChat().ID, query.Message.GetMessageID()
 }
-
 
 // finalizeReminderCreation is the shared post-creation logic for quick time and text time flows.
 // It stores the pending reminder, shows the recurrence keyboard, and sets the waiting_recurrence state.
@@ -130,8 +129,8 @@ func (h *Handlers) RegisterAll(bh *th.BotHandler) {
 	}
 
 	// Text Messages
-	bh.HandleMessage(h.handleTextMessage, 
-		th.AnyMessageWithText(), 
+	bh.HandleMessage(h.handleTextMessage,
+		th.AnyMessageWithText(),
 		th.Not(th.AnyCommand()),
 		func(ctx context.Context, update telego.Update) bool {
 			return update.Message == nil || update.Message.Location == nil
@@ -177,7 +176,7 @@ func (h *Handlers) handleStart(ctx *th.Context, message telego.Message) error {
 		}
 
 		// Notify the inviter that they have a new request
-		_ = h.send(ctx.Context(), inviterID, 
+		_ = h.send(ctx.Context(), inviterID,
 			fmt.Sprintf("🔔 <b>Новая заявка в друзья!</b>\n\nПользователь %d хочет стать вашим другом.", chatID),
 			PendingFriendKeyboard(chatID))
 
@@ -201,7 +200,7 @@ func (h *Handlers) handleBackToMenu(ctx *th.Context, query telego.CallbackQuery)
 
 func (h *Handlers) handleSetupTimezone(ctx *th.Context, query telego.CallbackQuery) error {
 	chatID, msgID := h.callbackCtx(ctx, query)
-	
+
 	if err := h.state.SetWaitingTimezoneState(ctx.Context(), chatID); err != nil {
 		h.logger.Error("failed to set state", "error", err)
 	}
@@ -212,7 +211,7 @@ func (h *Handlers) handleSetupTimezone(ctx *th.Context, query telego.CallbackQue
 
 func (h *Handlers) handleTimezoneChoice(ctx *th.Context, query telego.CallbackQuery) error {
 	chatID, msgID := h.callbackCtx(ctx, query)
-	
+
 	tzName := strings.TrimPrefix(query.Data, "tz:")
 	if tzName == "" {
 		return nil
@@ -231,7 +230,7 @@ func (h *Handlers) handleTimezoneChoice(ctx *th.Context, query telego.CallbackQu
 
 func (h *Handlers) handleTextTimezone(ctx *th.Context, chatID int64, sessionID int, text string) error {
 	tzName := core.ParseTimezoneAlias(text)
-	
+
 	// If alias not found, try parsing as exact IANA timezone
 	if tzName == "" {
 		if _, err := time.LoadLocation(strings.TrimSpace(text)); err == nil {
@@ -290,10 +289,10 @@ func (h *Handlers) parseWeekdayMask(msg telego.MaybeInaccessibleMessage) int {
 		for _, btn := range row {
 			if strings.HasPrefix(btn.Text, "✅") && strings.HasPrefix(btn.CallbackData, "wd:") {
 				wdID, err := strconv.Atoi(strings.TrimPrefix(btn.CallbackData, "wd:"))
-				if err != nil {
-					continue // skip "wd:done"
+				if err != nil || wdID < 0 || wdID > 6 {
+					continue // skip "wd:done" and any out-of-range values
 				}
-				mask |= (1 << uint(wdID))
+				mask |= 1 << uint(wdID)
 			}
 		}
 	}
@@ -376,7 +375,7 @@ func (h *Handlers) notifyOtherParty(ctx context.Context, actorChatID int64, r *s
 		return
 	}
 	name := h.ResolveName(ctx, actorChatID)
-	h.send(ctx, targetID, fmt.Sprintf("👤 <b>%s</b> %s", name, message), nil)
+	_ = h.send(ctx, targetID, fmt.Sprintf("👤 <b>%s</b> %s", name, message), nil)
 }
 
 func (h *Handlers) getPendingCount(ctx context.Context, chatID int64) int {

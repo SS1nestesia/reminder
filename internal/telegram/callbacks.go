@@ -1,3 +1,9 @@
+// Package telegram contains the Telegram-specific infrastructure:
+// command and callback-query handlers, inline-keyboard builders, and
+// a notifier that adapts [core.Notifier] to the Telegram Bot API.
+//
+// Business logic lives in the [core] package; this one is intentionally
+// thin and focused on UX orchestration.
 package telegram
 
 // Callback data prefixes used in inline keyboard buttons.
@@ -39,4 +45,3 @@ const (
 	CBPrefixFriendDelete  = "fdelete:"
 	CBPrefixFriendConfDel = "fconfirm_delete:"
 )
-

@@ -50,15 +50,15 @@ func (m *StateManager) SetWaitingTimezoneState(ctx context.Context, chatID int64
 	return m.sessions.SetState(ctx, chatID, StateWaitingTimezone)
 }
 
-func (m *StateManager) SetEditingState(ctx context.Context, chatID int64, id int64) error {
+func (m *StateManager) SetEditingState(ctx context.Context, chatID, id int64) error {
 	return m.sessions.SetState(ctx, chatID, StateEditingPrefix+strconv.FormatInt(id, 10))
 }
 
-func (m *StateManager) SetRescheduleState(ctx context.Context, chatID int64, id int64) error {
+func (m *StateManager) SetRescheduleState(ctx context.Context, chatID, id int64) error {
 	return m.sessions.SetState(ctx, chatID, StateReschedulePrefix+strconv.FormatInt(id, 10))
 }
 
-func (m *StateManager) SetEditRepeatState(ctx context.Context, chatID int64, id int64) error {
+func (m *StateManager) SetEditRepeatState(ctx context.Context, chatID, id int64) error {
 	state := StateEditRepeatPrefix + strconv.FormatInt(id, 10)
 	m.logger.Debug("SetEditRepeatState", "chat_id", chatID, "id", id, "state", state)
 	return m.sessions.SetState(ctx, chatID, state)
@@ -68,7 +68,7 @@ func (m *StateManager) SetWaitingRecurrenceState(ctx context.Context, chatID int
 	return m.sessions.SetState(ctx, chatID, StateWaitingRecurrence)
 }
 
-func (m *StateManager) SetWaitingWeekdaysState(ctx context.Context, chatID int64, id int64) error {
+func (m *StateManager) SetWaitingWeekdaysState(ctx context.Context, chatID, id int64) error {
 	if id == 0 {
 		// Fallback: try to get from pending reminder
 		pid, _ := m.sessions.GetPendingReminderID(ctx, chatID)
@@ -116,7 +116,7 @@ func (m *StateManager) GetPendingText(ctx context.Context, chatID int64) (string
 	return m.sessions.GetPendingText(ctx, chatID)
 }
 
-func (m *StateManager) SetPendingReminder(ctx context.Context, chatID int64, id int64) error {
+func (m *StateManager) SetPendingReminder(ctx context.Context, chatID, id int64) error {
 	return m.sessions.SetPendingReminderID(ctx, chatID, id)
 }
 
@@ -134,7 +134,7 @@ func (m *StateManager) GetSessionMessage(ctx context.Context, chatID int64) (int
 	return m.sessions.GetSessionMessageID(ctx, chatID)
 }
 
-func (m *StateManager) ParseIDFromState(state string, prefix string) (int64, bool) {
+func (m *StateManager) ParseIDFromState(state, prefix string) (int64, bool) {
 	if !strings.HasPrefix(state, prefix) {
 		return 0, false
 	}

@@ -57,7 +57,7 @@ type ReminderRepository interface {
 	Add(ctx context.Context, r *Reminder) error
 	GetByChatID(ctx context.Context, chatID int64) ([]Reminder, error)
 	GetByID(ctx context.Context, id int64) (*Reminder, error)
-	Delete(ctx context.Context, chatID int64, id int64) error
+	Delete(ctx context.Context, chatID, id int64) error
 	Update(ctx context.Context, r *Reminder) error
 
 	GetDue(ctx context.Context, before time.Time) ([]Reminder, error)
@@ -69,7 +69,7 @@ type ReminderRepository interface {
 	// GetFriendReminders returns all reminders where author_id != 0 for a given chat_id.
 	GetFriendReminders(ctx context.Context, chatID int64) ([]Reminder, error)
 	// ClearAuthor sets author_id = 0 for all reminders where authorID matches.
-	ClearAuthor(ctx context.Context, authorID int64, targetChatID int64) error
+	ClearAuthor(ctx context.Context, authorID, targetChatID int64) error
 }
 
 type FriendRepository interface {
@@ -101,7 +101,7 @@ type SessionRepository interface {
 	SetSessionMessageID(ctx context.Context, chatID int64, messageID int) error
 	GetSessionMessageID(ctx context.Context, chatID int64) (int, error)
 
-	SetPendingReminderID(ctx context.Context, chatID int64, id int64) error
+	SetPendingReminderID(ctx context.Context, chatID, id int64) error
 	GetPendingReminderID(ctx context.Context, chatID int64) (int64, error)
 
 	SetTimezone(ctx context.Context, chatID int64, tz string) error

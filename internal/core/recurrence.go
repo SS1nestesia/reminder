@@ -44,7 +44,7 @@ func NextOccurrence(r storage.Reminder, userLoc *time.Location, now time.Time) (
 		if userLoc == nil {
 			userLoc = time.UTC
 		}
-		
+
 		nowInLoc := now.In(userLoc)
 		origInLoc := r.NotifyAt.In(userLoc)
 
@@ -61,9 +61,12 @@ func NextOccurrence(r storage.Reminder, userLoc *time.Location, now time.Time) (
 
 			wd := next.Weekday()
 			// Mon=1 (shift 0), Tue=2 (shift 1), ..., Sat=6 (shift 5), Sun=0 (shift 6)
-			shift := uint(wd) - 1
+			// wd is time.Weekday (0..6), so the conversion below is always safe.
+			var shift uint
 			if wd == time.Sunday {
 				shift = 6
+			} else {
+				shift = uint(wd - 1) //nolint:gosec // wd ∈ {1..6} here; no overflow
 			}
 
 			if (r.Weekdays & (1 << shift)) != 0 {

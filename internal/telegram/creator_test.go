@@ -89,14 +89,14 @@ func TestCreatorHandlers(t *testing.T) {
 	t.Run("handleWeekday_Done", func(t *testing.T) {
 		query := cq
 		query.Data = "wd:done"
-		
+
 		msg := &telego.Message{
-			Chat:      telego.Chat{ID: 1},
-			MessageID: 100,
-			ReplyMarkup: WeekdaysKeyboard(1<<1).(*telego.InlineKeyboardMarkup),
+			Chat:        telego.Chat{ID: 1},
+			MessageID:   100,
+			ReplyMarkup: WeekdaysKeyboard(1 << 1).(*telego.InlineKeyboardMarkup),
 		}
 		query.Message = msg
-		
+
 		st.SetWaitingWeekdaysState(context.Background(), 1, 42)
 		err := h.creator.handleWeekday(ctx, query)
 		if err != nil {
@@ -108,12 +108,12 @@ func TestCreatorHandlers(t *testing.T) {
 		query := cq
 		query.Data = "wd:done"
 		msg := &telego.Message{
-			Chat:      telego.Chat{ID: 1},
-			MessageID: 100,
+			Chat:        telego.Chat{ID: 1},
+			MessageID:   100,
 			ReplyMarkup: WeekdaysKeyboard(0).(*telego.InlineKeyboardMarkup),
 		}
 		query.Message = msg
-		
+
 		st.SetWaitingWeekdaysState(context.Background(), 1, 42)
 		// Should return an answer callback with error
 		_ = h.creator.handleWeekday(ctx, query)

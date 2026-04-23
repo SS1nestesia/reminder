@@ -89,7 +89,7 @@ func (s *ReminderService) AddRecurrentReminder(ctx context.Context, chatID int64
 	return s.repo.Add(ctx, r)
 }
 
-func (s *ReminderService) CompleteReminder(ctx context.Context, chatID int64, id int64) error {
+func (s *ReminderService) CompleteReminder(ctx context.Context, chatID, id int64) error {
 	r, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -118,18 +118,18 @@ func (s *ReminderService) GetReminder(ctx context.Context, id int64) (*storage.R
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *ReminderService) DeleteReminder(ctx context.Context, chatID int64, id int64) error {
+func (s *ReminderService) DeleteReminder(ctx context.Context, chatID, id int64) error {
 	return s.repo.Delete(ctx, chatID, id)
 }
 
-func (s *ReminderService) UpdateReminderText(ctx context.Context, chatID int64, id int64, text string) error {
+func (s *ReminderService) UpdateReminderText(ctx context.Context, chatID, id int64, text string) error {
 	return s.withReminder(ctx, chatID, id, func(r *storage.Reminder) error {
 		r.Text = text
 		return nil
 	})
 }
 
-func (s *ReminderService) UpdateReminderInterval(ctx context.Context, chatID int64, id int64, interval string) error {
+func (s *ReminderService) UpdateReminderInterval(ctx context.Context, chatID, id int64, interval string) error {
 	return s.withReminder(ctx, chatID, id, func(r *storage.Reminder) error {
 		r.Interval = interval
 		r.Weekdays = 0
@@ -137,7 +137,7 @@ func (s *ReminderService) UpdateReminderInterval(ctx context.Context, chatID int
 	})
 }
 
-func (s *ReminderService) UpdateReminderWeekdays(ctx context.Context, chatID int64, id int64, weekdays int) error {
+func (s *ReminderService) UpdateReminderWeekdays(ctx context.Context, chatID, id int64, weekdays int) error {
 	return s.withReminder(ctx, chatID, id, func(r *storage.Reminder) error {
 		r.Weekdays = weekdays
 		r.Interval = ""
@@ -145,14 +145,14 @@ func (s *ReminderService) UpdateReminderWeekdays(ctx context.Context, chatID int
 	})
 }
 
-func (s *ReminderService) RescheduleReminder(ctx context.Context, chatID int64, id int64, newTime time.Time) error {
+func (s *ReminderService) RescheduleReminder(ctx context.Context, chatID, id int64, newTime time.Time) error {
 	return s.withReminder(ctx, chatID, id, func(r *storage.Reminder) error {
 		r.NotifyAt = newTime
 		return nil
 	})
 }
 
-func (s *ReminderService) SnoozeReminder(ctx context.Context, chatID int64, id int64, duration time.Duration) error {
+func (s *ReminderService) SnoozeReminder(ctx context.Context, chatID, id int64, duration time.Duration) error {
 	return s.withReminder(ctx, chatID, id, func(r *storage.Reminder) error {
 		userLoc := s.GetUserLocation(ctx, chatID)
 		r.NotifyAt = time.Now().In(userLoc).Add(duration).UTC()
@@ -182,7 +182,7 @@ func (s *ReminderService) GetFriendReminders(ctx context.Context, chatID int64) 
 
 // DeleteFriendReminder deletes a reminder that was created by a friend.
 // Either the owner (chatID == r.ChatID) or the author (chatID == r.AuthorID) can delete.
-func (s *ReminderService) DeleteFriendReminder(ctx context.Context, chatID int64, id int64) (*storage.Reminder, error) {
+func (s *ReminderService) DeleteFriendReminder(ctx context.Context, chatID, id int64) (*storage.Reminder, error) {
 	r, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -198,7 +198,7 @@ func (s *ReminderService) DeleteFriendReminder(ctx context.Context, chatID int64
 }
 
 // UpdateFriendReminderText updates text for a friend reminder. Allowed for both owner and author.
-func (s *ReminderService) UpdateFriendReminderText(ctx context.Context, chatID int64, id int64, text string) (*storage.Reminder, error) {
+func (s *ReminderService) UpdateFriendReminderText(ctx context.Context, chatID, id int64, text string) (*storage.Reminder, error) {
 	r, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (s *ReminderService) UpdateFriendReminderText(ctx context.Context, chatID i
 }
 
 // UpdateFriendReminderTime updates time for a friend reminder. Allowed for both owner and author.
-func (s *ReminderService) UpdateFriendReminderTime(ctx context.Context, chatID int64, id int64, newTime time.Time) (*storage.Reminder, error) {
+func (s *ReminderService) UpdateFriendReminderTime(ctx context.Context, chatID, id int64, newTime time.Time) (*storage.Reminder, error) {
 	r, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -228,5 +228,3 @@ func (s *ReminderService) UpdateFriendReminderTime(ctx context.Context, chatID i
 	}
 	return r, nil
 }
-
-

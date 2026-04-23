@@ -1,3 +1,5 @@
+// Package config loads application configuration from environment variables
+// (optionally via a .env file) and exposes it as a typed [Config] struct.
 package config
 
 import (

@@ -1,3 +1,6 @@
+// Package main is the entry point of the Reminder Bot Telegram application.
+// It wires the config, storage, core business services, and telegram handlers
+// into a runnable long-polling bot process.
 package main
 
 import (
@@ -37,7 +40,11 @@ func main() {
 		logger.Error("failed to init storage", "error", err)
 		os.Exit(1)
 	}
-	defer st.Close()
+	defer func() {
+		if err := st.Close(); err != nil {
+			logger.Error("failed to close storage", "error", err)
+		}
+	}()
 
 	service := core.NewReminderService(st, logger, loc)
 	friendService := core.NewFriendService(st, logger)
@@ -88,9 +95,14 @@ func main() {
 	go func() {
 		<-ctx.Done()
 		logger.Info("shutting down bot...")
-		bh.Stop()
+		if err := bh.Stop(); err != nil {
+			logger.Error("failed to stop bot handler", "error", err)
+		}
 	}()
 
 	logger.Info("bot is running", "timezone", cfg.Timezone)
-	bh.Start()
+	if err := bh.Start(); err != nil {
+		logger.Error("bot handler terminated with error", "error", err)
+		os.Exit(1)
+	}
 }

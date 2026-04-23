@@ -100,7 +100,7 @@ func FormatTimezone(tz string) string {
 func GeocodeCity(ctx context.Context, city string) (lat, lon float64, err error) {
 	apiURL := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1", url.QueryEscape(city))
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, http.NoBody)
 	if err != nil {
 		return 0, 0, fmt.Errorf("geocode: build request: %w", err)
 	}
@@ -110,7 +110,7 @@ func GeocodeCity(ctx context.Context, city string) (lat, lon float64, err error)
 	if err != nil {
 		return 0, 0, fmt.Errorf("geocode: do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result []struct {
 		Lat string `json:"lat"`

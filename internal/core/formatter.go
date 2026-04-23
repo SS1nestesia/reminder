@@ -1,3 +1,11 @@
+// Package core contains the platform-agnostic business logic of the
+// reminder bot: reminder CRUD and scheduling, FSM session management,
+// NLP time/interval parsing, timezone resolution, recurrence rules,
+// friend management and notification orchestration.
+//
+// Everything in this package is pure Go with no dependency on the
+// Telegram SDK. It can be driven by any front-end that speaks to the
+// [storage.Storage] interface.
 package core
 
 import (

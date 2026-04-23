@@ -53,7 +53,7 @@ func TestParser_ParseTime_RecentPast_Rejected(t *testing.T) {
 }
 
 // TestParser_ParseTime_ExplicitPastDate_RollsForwardToNextYear verifies the
-// documented behaviour: an explicit calendar date more than 48h in the
+// documented behavior: an explicit calendar date more than 48h in the
 // past is treated as "that date next year".
 func TestParser_ParseTime_ExplicitPastDate_RollsForwardToNextYear(t *testing.T) {
 	// It's April 10, 2026. "25 марта в 14:30" was ~16 days ago.

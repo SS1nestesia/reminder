@@ -65,10 +65,6 @@ linters:
     presets:
       - common-false-positives
       - legacy
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
     rules:
       # Test files routinely use seeded time, errcheck-heavy patterns, and
       # long line literals. Relax the strictest linters there.

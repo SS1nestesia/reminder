@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/mymmrac/telego"
 	"reminder-bot/internal/storage"
+
+	"github.com/mymmrac/telego"
 )
 
 // ReminderServicer defines the business-logic methods used by telegram handlers.
@@ -16,16 +17,16 @@ type ReminderServicer interface {
 	GetReminder(ctx context.Context, id int64) (*storage.Reminder, error)
 	GetReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
 	GetFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
-	DeleteReminder(ctx context.Context, chatID int64, id int64) error
-	DeleteFriendReminder(ctx context.Context, chatID int64, id int64) (*storage.Reminder, error)
-	CompleteReminder(ctx context.Context, chatID int64, id int64) error
-	RescheduleReminder(ctx context.Context, chatID int64, id int64, newTime time.Time) error
-	SnoozeReminder(ctx context.Context, chatID int64, id int64, duration time.Duration) error
-	UpdateReminderText(ctx context.Context, chatID int64, id int64, text string) error
-	UpdateReminderInterval(ctx context.Context, chatID int64, id int64, interval string) error
-	UpdateReminderWeekdays(ctx context.Context, chatID int64, id int64, weekdays int) error
-	UpdateFriendReminderText(ctx context.Context, chatID int64, id int64, text string) (*storage.Reminder, error)
-	UpdateFriendReminderTime(ctx context.Context, chatID int64, id int64, newTime time.Time) (*storage.Reminder, error)
+	DeleteReminder(ctx context.Context, chatID, id int64) error
+	DeleteFriendReminder(ctx context.Context, chatID, id int64) (*storage.Reminder, error)
+	CompleteReminder(ctx context.Context, chatID, id int64) error
+	RescheduleReminder(ctx context.Context, chatID, id int64, newTime time.Time) error
+	SnoozeReminder(ctx context.Context, chatID, id int64, duration time.Duration) error
+	UpdateReminderText(ctx context.Context, chatID, id int64, text string) error
+	UpdateReminderInterval(ctx context.Context, chatID, id int64, interval string) error
+	UpdateReminderWeekdays(ctx context.Context, chatID, id int64, weekdays int) error
+	UpdateFriendReminderText(ctx context.Context, chatID, id int64, text string) (*storage.Reminder, error)
+	UpdateFriendReminderTime(ctx context.Context, chatID, id int64, newTime time.Time) (*storage.Reminder, error)
 	GetUserLocation(ctx context.Context, chatID int64) *time.Location
 }
 
@@ -53,16 +54,16 @@ type StateManagerr interface {
 	SetWaitingForTextState(ctx context.Context, chatID int64) error
 	SetWaitingForTimeState(ctx context.Context, chatID int64) error
 	SetWaitingRecurrenceState(ctx context.Context, chatID int64) error
-	SetWaitingWeekdaysState(ctx context.Context, chatID int64, id int64) error
+	SetWaitingWeekdaysState(ctx context.Context, chatID, id int64) error
 	SetWaitingTimezoneState(ctx context.Context, chatID int64) error
-	SetEditingState(ctx context.Context, chatID int64, id int64) error
-	SetRescheduleState(ctx context.Context, chatID int64, id int64) error
-	SetEditRepeatState(ctx context.Context, chatID int64, id int64) error
+	SetEditingState(ctx context.Context, chatID, id int64) error
+	SetRescheduleState(ctx context.Context, chatID, id int64) error
+	SetEditRepeatState(ctx context.Context, chatID, id int64) error
 
 	// Pending data
 	SetPendingText(ctx context.Context, chatID int64, text string) error
 	GetPendingText(ctx context.Context, chatID int64) (string, error)
-	SetPendingReminder(ctx context.Context, chatID int64, id int64) error
+	SetPendingReminder(ctx context.Context, chatID, id int64) error
 
 	// Session message
 	SetSessionMessage(ctx context.Context, chatID int64, msgID int) error
@@ -99,4 +100,3 @@ type BotAPI interface {
 	AnswerCallbackQuery(ctx context.Context, params *telego.AnswerCallbackQueryParams) error
 	GetChat(ctx context.Context, params *telego.GetChatParams) (*telego.ChatFullInfo, error)
 }
-

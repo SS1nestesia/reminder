@@ -35,7 +35,7 @@ func (h *EditorHandlers) handleEditText(ctx *th.Context, query telego.CallbackQu
 	if err := h.state.SetEditingState(ctx.Context(), chatID, id); err != nil {
 		h.logger.Error("failed to set state", "error", err)
 	}
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 
 	return h.common.edit(ctx.Context(), chatID, msgID, "✏️ <b>Отправьте новый текст напоминания:</b>", CancelEditKeyboard(id).(*telego.InlineKeyboardMarkup))
 }
@@ -60,7 +60,7 @@ func (h *EditorHandlers) startReschedule(ctx *th.Context, query telego.CallbackQ
 	if err := h.state.SetRescheduleState(ctx.Context(), chatID, id); err != nil {
 		h.logger.Error("failed to set state", "error", err)
 	}
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 
 	return h.common.edit(ctx.Context(), chatID, msgID, "⏰ <b>Укажите новое время напоминания:</b>", QuickTimeEditKeyboard(id).(*telego.InlineKeyboardMarkup))
 }
@@ -76,7 +76,7 @@ func (h *EditorHandlers) handleEditRepeat(ctx *th.Context, query telego.Callback
 	if err := h.state.SetEditRepeatState(ctx.Context(), chatID, id); err != nil {
 		h.logger.Error("failed to set state", "error", err)
 	}
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 
 	return h.common.edit(ctx.Context(), chatID, msgID, "🔄 <b>Выберите интервал повторения:</b>", RecurrenceEditKeyboard(id).(*telego.InlineKeyboardMarkup))
 }
@@ -117,7 +117,7 @@ func (h *EditorHandlers) handleSnoozeApply(ctx *th.Context, query telego.Callbac
 	if len(parts) != 3 {
 		return nil
 	}
-	
+
 	durationStr := parts[1]
 	idStr := parts[2]
 	id, err := strconv.ParseInt(idStr, 10, 64)

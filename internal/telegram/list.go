@@ -26,7 +26,7 @@ func (h *ListHandlers) handleListReminders(ctx *th.Context, query telego.Callbac
 		h.logger.Error("failed to get reminders", "error", err)
 	}
 
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 	userLoc := h.service.GetUserLocation(ctx.Context(), chatID)
 	return h.common.edit(ctx.Context(), chatID, msgID, h.common.buildListText(ctx.Context(), chatID, rems), ListKeyboard(rems, userLoc).(*telego.InlineKeyboardMarkup))
 }

@@ -71,5 +71,3 @@ func TestMainHandlers(t *testing.T) {
 		}
 	})
 }
-
-

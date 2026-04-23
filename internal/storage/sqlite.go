@@ -1,3 +1,7 @@
+// Package storage defines persistence abstractions (interfaces and types)
+// for the reminder bot and provides a SQLite-backed implementation.
+// Business logic depends only on the interfaces, making the bot
+// testable with in-memory fakes and portable to other backends.
 package storage
 
 import (
@@ -10,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	// modernc.org/sqlite is a CGO-free pure-Go SQLite driver; imported for
+	// its side-effects (registration of the "sqlite" database/sql driver).
 	_ "modernc.org/sqlite"
 )
 
@@ -23,7 +29,7 @@ type sqliteStorage struct {
 
 func NewSQLiteStorage(dbPath string) (Storage, error) {
 	if dir := filepath.Dir(dbPath); dir != "." && dir != "" {
-		_ = os.MkdirAll(dir, 0755)
+		_ = os.MkdirAll(dir, 0o755)
 	}
 
 	db, err := sql.Open("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
@@ -161,7 +167,7 @@ func (r *reminderRepo) GetByChatID(ctx context.Context, chatID int64) ([]Reminde
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []Reminder
 	for rows.Next() {
@@ -189,7 +195,7 @@ func (r *reminderRepo) GetByID(ctx context.Context, id int64) (*Reminder, error)
 	return &rem, nil
 }
 
-func (r *reminderRepo) Delete(ctx context.Context, chatID int64, id int64) error {
+func (r *reminderRepo) Delete(ctx context.Context, chatID, id int64) error {
 	res, err := r.db.ExecContext(ctx, "DELETE FROM reminders WHERE id = ? AND chat_id = ?", id, chatID)
 	if err != nil {
 		return err
@@ -230,7 +236,7 @@ func (r *reminderRepo) GetDue(ctx context.Context, before time.Time) ([]Reminder
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []Reminder
 	for rows.Next() {
@@ -281,7 +287,7 @@ func (r *reminderRepo) GetByAuthorAndTarget(ctx context.Context, authorID, targe
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []Reminder
 	for rows.Next() {
@@ -302,7 +308,7 @@ func (r *reminderRepo) GetFriendReminders(ctx context.Context, chatID int64) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []Reminder
 	for rows.Next() {
@@ -315,7 +321,7 @@ func (r *reminderRepo) GetFriendReminders(ctx context.Context, chatID int64) ([]
 	return list, rows.Err()
 }
 
-func (r *reminderRepo) ClearAuthor(ctx context.Context, authorID int64, targetChatID int64) error {
+func (r *reminderRepo) ClearAuthor(ctx context.Context, authorID, targetChatID int64) error {
 	_, err := r.db.ExecContext(ctx,
 		"UPDATE reminders SET author_id = 0 WHERE author_id = ? AND chat_id = ?",
 		authorID, targetChatID,
@@ -411,7 +417,7 @@ func (s *sessionRepo) GetSessionMessageID(ctx context.Context, chatID int64) (in
 	return id, nil
 }
 
-func (s *sessionRepo) SetPendingReminderID(ctx context.Context, chatID int64, id int64) error {
+func (s *sessionRepo) SetPendingReminderID(ctx context.Context, chatID, id int64) error {
 	s.ensureSession(ctx, chatID)
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE user_states SET pending_reminder_id = ?, updated_at = CURRENT_TIMESTAMP WHERE chat_id = ?`,
@@ -520,7 +526,7 @@ func (f *friendRepo) GetFriends(ctx context.Context, userID int64) ([]Friend, er
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []Friend
 	for rows.Next() {
@@ -541,7 +547,7 @@ func (f *friendRepo) GetPendingRequests(ctx context.Context, userID int64) ([]Fr
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var list []Friend
 	for rows.Next() {

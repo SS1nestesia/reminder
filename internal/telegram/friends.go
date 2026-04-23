@@ -42,10 +42,10 @@ func (h *FriendHandlers) handleFriendsMenu(ctx *th.Context, query telego.Callbac
 	sb.WriteString("👥 <b>Друзья</b>\n\n")
 
 	if len(pending) > 0 {
-		sb.WriteString(fmt.Sprintf("🔔 <b>Входящие заявки: %d</b>\n\n", len(pending)))
+		fmt.Fprintf(&sb, "🔔 <b>Входящие заявки: %d</b>\n\n", len(pending))
 		for _, p := range pending {
 			name := h.common.ResolveName(ctx.Context(), p.UserID)
-			sb.WriteString(fmt.Sprintf("• %s\n", name))
+			fmt.Fprintf(&sb, "• %s\n", name)
 		}
 		sb.WriteString("\n")
 	}
@@ -53,23 +53,23 @@ func (h *FriendHandlers) handleFriendsMenu(ctx *th.Context, query telego.Callbac
 	if len(friends) == 0 {
 		sb.WriteString("У вас пока нет друзей.\nНажмите «Пригласить друга» чтобы отправить ссылку-приглашение!")
 	} else {
-		sb.WriteString(fmt.Sprintf("Всего друзей: %d\n\n", len(friends)))
+		fmt.Fprintf(&sb, "Всего друзей: %d\n\n", len(friends))
 		for i, f := range friends {
 			name := h.common.ResolveName(ctx.Context(), f.FriendID)
-			sb.WriteString(fmt.Sprintf("%d. %s\n", i+1, name))
+			fmt.Fprintf(&sb, "%d. %s\n", i+1, name)
 		}
 	}
 
-	return h.common.edit(ctx.Context(), chatID, msgID, sb.String(), h.friendsMenuKeyboard(friends, pending))
+	return h.common.edit(ctx.Context(), chatID, msgID, sb.String(), h.friendsMenuKeyboard(ctx.Context(), friends, pending))
 }
 
-func (h *FriendHandlers) friendsMenuKeyboard(friends []storage.Friend, pending []storage.Friend) *telego.InlineKeyboardMarkup {
+func (h *FriendHandlers) friendsMenuKeyboard(ctx context.Context, friends, pending []storage.Friend) *telego.InlineKeyboardMarkup {
 	var rows [][]telego.InlineKeyboardButton
 
 	// Pending request buttons
 	for _, p := range pending {
 		idStr := strconv.FormatInt(p.UserID, 10)
-		name := h.common.ResolveName(context.Background(), p.UserID)
+		name := h.common.ResolveName(ctx, p.UserID)
 		rows = append(rows, tu.InlineKeyboardRow(
 			tu.InlineKeyboardButton(fmt.Sprintf("✅ Принять (%s)", name)).WithCallbackData(CBPrefixAcceptFriend+idStr),
 			tu.InlineKeyboardButton("❌").WithCallbackData(CBPrefixRejectFriend+idStr),
@@ -79,18 +79,20 @@ func (h *FriendHandlers) friendsMenuKeyboard(friends []storage.Friend, pending [
 	// Remove friend buttons
 	for _, f := range friends {
 		idStr := strconv.FormatInt(f.FriendID, 10)
-		name := h.common.ResolveName(context.Background(), f.FriendID)
+		name := h.common.ResolveName(ctx, f.FriendID)
 		rows = append(rows, tu.InlineKeyboardRow(
 			tu.InlineKeyboardButton(fmt.Sprintf("🗑 Удалить %s", name)).WithCallbackData(CBPrefixConfirmRemove+idStr),
 		))
 	}
 
-	rows = append(rows, tu.InlineKeyboardRow(
-		tu.InlineKeyboardButton("🔗 Пригласить друга").WithCallbackData(CBFriendsInvite),
-	))
-	rows = append(rows, tu.InlineKeyboardRow(
-		tu.InlineKeyboardButton("⬅️ В меню").WithCallbackData(CBBackToMenu),
-	))
+	rows = append(rows,
+		tu.InlineKeyboardRow(
+			tu.InlineKeyboardButton("🔗 Пригласить друга").WithCallbackData(CBFriendsInvite),
+		),
+		tu.InlineKeyboardRow(
+			tu.InlineKeyboardButton("⬅️ В меню").WithCallbackData(CBBackToMenu),
+		),
+	)
 
 	return tu.InlineKeyboard(rows...)
 }
@@ -193,13 +195,13 @@ func (h *FriendHandlers) handleFriendRemindersList(ctx *th.Context, query telego
 		h.logger.Error("failed to get friend reminders", "error", err)
 	}
 
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 	userLoc := h.service.GetUserLocation(ctx.Context(), chatID)
-	text := h.buildFriendRemindersText(rems, userLoc)
+	text := h.buildFriendRemindersText(ctx.Context(), rems, userLoc)
 	return h.common.edit(ctx.Context(), chatID, msgID, text, FriendRemindersKeyboard(rems, userLoc))
 }
 
-func (h *FriendHandlers) buildFriendRemindersText(rems []storage.Reminder, userLoc *time.Location) string {
+func (h *FriendHandlers) buildFriendRemindersText(ctx context.Context, rems []storage.Reminder, userLoc *time.Location) string {
 	if len(rems) == 0 {
 		return "📬 <b>Напоминания от друзей</b>\n\nПока ничего нет."
 	}
@@ -208,15 +210,15 @@ func (h *FriendHandlers) buildFriendRemindersText(rems []storage.Reminder, userL
 	sb.WriteString("📬 <b>Напоминания от друзей</b>\n\n")
 	for i, r := range rems {
 		timeStr := r.NotifyAt.In(userLoc).Format("15:04 02.01")
-		authorTag := "👤 От друга"
+		var authorTag string
 		if r.AuthorID != 0 {
-			name := h.common.ResolveName(context.Background(), r.AuthorID)
+			name := h.common.ResolveName(ctx, r.AuthorID)
 			authorTag = fmt.Sprintf("👤 От: %s", name)
 		} else {
 			authorTag = "👤 Автор неизвестен"
 		}
-		sb.WriteString(fmt.Sprintf("🔹 %d. <b>%s</b>\n   ⏰ %s\n   %s\n   🔄 %s\n\n",
-			i+1, html.EscapeString(r.Text), timeStr, authorTag, core.FormatRecurrence(r)))
+		fmt.Fprintf(&sb, "🔹 %d. <b>%s</b>\n   ⏰ %s\n   %s\n   🔄 %s\n\n",
+			i+1, html.EscapeString(r.Text), timeStr, authorTag, core.FormatRecurrence(r))
 	}
 	return sb.String()
 }
@@ -271,7 +273,7 @@ func (h *FriendHandlers) handleFriendDelete(ctx *th.Context, query telego.Callba
 
 	rems, _ := h.service.GetFriendReminders(ctx.Context(), chatID)
 	userLoc := h.service.GetUserLocation(ctx.Context(), chatID)
-	text := "✅ <b>Напоминание удалено!</b>\n\n" + h.buildFriendRemindersText(rems, userLoc)
+	text := "✅ <b>Напоминание удалено!</b>\n\n" + h.buildFriendRemindersText(ctx.Context(), rems, userLoc)
 	return h.common.edit(ctx.Context(), chatID, msgID, text, FriendRemindersKeyboard(rems, userLoc))
 }
 
@@ -286,7 +288,7 @@ func (h *FriendHandlers) handleCreateForChoice(ctx *th.Context, query telego.Cal
 		if err := h.state.SetWaitingForTextState(ctx.Context(), chatID); err != nil {
 			h.logger.Error("failed to set state", "error", err)
 		}
-		h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+		_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 		return h.common.edit(ctx.Context(), chatID, msgID, "✍️ <b>Напишите текст напоминания:</b>", CancelKeyboard().(*telego.InlineKeyboardMarkup))
 	}
 
@@ -319,7 +321,7 @@ func (h *FriendHandlers) handleCreateForTarget(ctx *th.Context, query telego.Cal
 		if err := h.state.SetWaitingForTextState(ctx.Context(), chatID); err != nil {
 			h.logger.Error("failed to set state", "error", err)
 		}
-		h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+		_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 		return h.common.edit(ctx.Context(), chatID, msgID, "✍️ <b>Напишите текст напоминания:</b>", CancelKeyboard().(*telego.InlineKeyboardMarkup))
 	}
 
@@ -333,7 +335,7 @@ func (h *FriendHandlers) handleCreateForTarget(ctx *th.Context, query telego.Cal
 	if err := h.state.SetState(ctx.Context(), chatID, state); err != nil {
 		h.logger.Error("failed to set state", "error", err)
 	}
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 
 	name := h.common.ResolveName(ctx.Context(), friendID)
 	return h.common.edit(ctx.Context(), chatID, msgID,
@@ -442,15 +444,10 @@ func FriendRemindersKeyboard(reminders []storage.Reminder, userLoc *time.Locatio
 		))
 	}
 
-	if len(reminders) == 0 {
-		rows = append(rows, tu.InlineKeyboardRow(
-			tu.InlineKeyboardButton("⬅️ В меню").WithCallbackData(CBBackToMenu),
-		))
-	} else {
-		rows = append(rows, tu.InlineKeyboardRow(
-			tu.InlineKeyboardButton("⬅️ В меню").WithCallbackData(CBBackToMenu),
-		))
-	}
+	// Both branches produced identical "back to menu" rows; simplify.
+	rows = append(rows, tu.InlineKeyboardRow(
+		tu.InlineKeyboardButton("⬅️ В меню").WithCallbackData(CBBackToMenu),
+	))
 
 	return tu.InlineKeyboard(rows...)
 }

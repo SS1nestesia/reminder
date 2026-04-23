@@ -167,4 +167,3 @@ func (p *Parser) ParseInterval(input string) (string, error) {
 
 	return (time.Duration(totalMinutes) * time.Minute).String(), nil
 }
-

@@ -12,7 +12,9 @@ import (
 
 type dummyNotifier struct{}
 
-func (d *dummyNotifier) Notify(ctx context.Context, item storage.Reminder) (int, error) { return 0, nil }
+func (d *dummyNotifier) Notify(ctx context.Context, item storage.Reminder) (int, error) {
+	return 0, nil
+}
 func (d *dummyNotifier) DeleteMessage(ctx context.Context, chatID int64, messageID int) error {
 	return nil
 }
@@ -26,8 +28,8 @@ func (d *dummyReminderRepo) GetByID(ctx context.Context, id int64) (*storage.Rem
 func (d *dummyReminderRepo) GetByChatID(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
 	return nil, nil
 }
-func (d *dummyReminderRepo) Delete(ctx context.Context, chatID, id int64) error { return nil }
-func (d *dummyReminderRepo) DeleteByID(ctx context.Context, id int64) error     { return nil }
+func (d *dummyReminderRepo) Delete(ctx context.Context, chatID, id int64) error    { return nil }
+func (d *dummyReminderRepo) DeleteByID(ctx context.Context, id int64) error        { return nil }
 func (d *dummyReminderRepo) Update(ctx context.Context, r *storage.Reminder) error { return nil }
 func (d *dummyReminderRepo) GetDue(ctx context.Context, at time.Time) ([]storage.Reminder, error) {
 	return nil, nil
@@ -41,7 +43,7 @@ func (d *dummyReminderRepo) GetByAuthorAndTarget(ctx context.Context, authorID, 
 func (d *dummyReminderRepo) GetFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
 	return nil, nil
 }
-func (d *dummyReminderRepo) ClearAuthor(ctx context.Context, authorID int64, targetChatID int64) error {
+func (d *dummyReminderRepo) ClearAuthor(ctx context.Context, authorID, targetChatID int64) error {
 	return nil
 }
 
@@ -67,7 +69,7 @@ func (d *dummySessionRepo) SetSessionMessageID(ctx context.Context, chatID int64
 func (d *dummySessionRepo) GetSessionMessageID(ctx context.Context, chatID int64) (int, error) {
 	return 0, nil
 }
-func (d *dummySessionRepo) SetPendingReminderID(ctx context.Context, chatID int64, id int64) error {
+func (d *dummySessionRepo) SetPendingReminderID(ctx context.Context, chatID, id int64) error {
 	return nil
 }
 func (d *dummySessionRepo) GetPendingReminderID(ctx context.Context, chatID int64) (int64, error) {

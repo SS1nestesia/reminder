@@ -29,7 +29,7 @@ func (h *CreatorHandlers) handleAddReminder(ctx *th.Context, query telego.Callba
 	if err := h.state.SetWaitingForTextState(ctx.Context(), chatID); err != nil {
 		h.logger.Error("failed to set state", "error", err)
 	}
-	h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
+	_ = h.state.SetSessionMessage(ctx.Context(), chatID, msgID)
 
 	return h.common.edit(ctx.Context(), chatID, msgID, "✍️ <b>Напишите текст напоминания:</b>", CancelKeyboard().(*telego.InlineKeyboardMarkup))
 }
@@ -180,8 +180,11 @@ func (h *CreatorHandlers) handleWeekday(ctx *th.Context, query telego.CallbackQu
 		return h.common.showReminderDetail(ctx.Context(), chatID, msgID, targetID)
 	}
 
-	wdID, _ := strconv.Atoi(data)
-	currentMask ^= (1 << uint(wdID))
+	wdID, err := strconv.Atoi(data)
+	if err != nil || wdID < 0 || wdID > 6 {
+		return nil
+	}
+	currentMask ^= 1 << uint(wdID)
 
 	return h.common.edit(ctx.Context(), chatID, msgID,
 		"📅 <b>Выберите дни недели:</b>",
