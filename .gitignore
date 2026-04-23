@@ -55,3 +55,12 @@ worktrees/
 
 # Knowledge Graph (CRG & GitNexus)
 .code-review-graph/
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
