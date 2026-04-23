@@ -49,14 +49,21 @@ func (s *ReminderService) GetUserLocation(ctx context.Context, chatID int64) *ti
 	return s.loc
 }
 
-// withReminder fetches a reminder by ID, verifies chatID ownership,
-// calls the mutate function, and persists the result.
+// withReminder fetches a reminder by ID, verifies access for chatID (owner
+// OR author for shared friend reminders), calls the mutate function, and
+// persists the result.
+//
+// Access rule: for self reminders (AuthorID=0), only the owner matches.
+// For friend-authored reminders, either side may edit — this enables
+// recurrence/weekday updates on reminders the author just created for a
+// friend, while still rejecting unrelated users (whose chatID equals
+// neither ChatID nor AuthorID).
 func (s *ReminderService) withReminder(ctx context.Context, chatID, id int64, mutate func(r *storage.Reminder) error) error {
 	r, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	if r.ChatID != chatID {
+	if r.ChatID != chatID && r.AuthorID != chatID {
 		return storage.ErrNotFound
 	}
 	if err := mutate(r); err != nil {
@@ -178,6 +185,12 @@ func (s *ReminderService) AddReminderForFriend(ctx context.Context, authorChatID
 // GetFriendReminders returns reminders created by friends for the given user.
 func (s *ReminderService) GetFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
 	return s.repo.GetFriendReminders(ctx, chatID)
+}
+
+// GetOutgoingFriendReminders returns reminders the given user authored
+// for their friends (author_id = chatID AND chat_id != chatID).
+func (s *ReminderService) GetOutgoingFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
+	return s.repo.GetOutgoingFriendReminders(ctx, chatID)
 }
 
 // DeleteFriendReminder deletes a reminder that was created by a friend.

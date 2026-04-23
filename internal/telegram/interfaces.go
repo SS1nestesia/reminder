@@ -17,6 +17,7 @@ type ReminderServicer interface {
 	GetReminder(ctx context.Context, id int64) (*storage.Reminder, error)
 	GetReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
 	GetFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
+	GetOutgoingFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
 	DeleteReminder(ctx context.Context, chatID, id int64) error
 	DeleteFriendReminder(ctx context.Context, chatID, id int64) (*storage.Reminder, error)
 	CompleteReminder(ctx context.Context, chatID, id int64) error

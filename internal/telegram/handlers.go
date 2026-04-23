@@ -158,14 +158,16 @@ func (h *Handlers) handleStart(ctx *th.Context, message telego.Message) error {
 		isFriend, _ := h.friend.friends.IsFriend(ctx.Context(), chatID, inviterID)
 		if isFriend {
 			tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
-			return h.send(ctx.Context(), chatID, "👥 Вы уже друзья!", MainMenuKeyboard(tz, pendingCount))
+			inviterName := h.ResolveName(ctx.Context(), inviterID)
+			return h.send(ctx.Context(), chatID, fmt.Sprintf("👥 Вы уже друзья с <b>%s</b>!", inviterName), MainMenuKeyboard(tz, pendingCount))
 		}
 
 		// Check if pending already
 		hasPending, _ := h.friend.friends.HasPendingRequest(ctx.Context(), chatID, inviterID)
 		if hasPending {
 			tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
-			return h.send(ctx.Context(), chatID, "⏳ Заявка уже отправлена, ожидает подтверждения.", MainMenuKeyboard(tz, pendingCount))
+			inviterName := h.ResolveName(ctx.Context(), inviterID)
+			return h.send(ctx.Context(), chatID, fmt.Sprintf("⏳ Заявка для <b>%s</b> уже отправлена, ожидает подтверждения.", inviterName), MainMenuKeyboard(tz, pendingCount))
 		}
 
 		// Send friend request
@@ -175,14 +177,18 @@ func (h *Handlers) handleStart(ctx *th.Context, message telego.Message) error {
 			return h.send(ctx.Context(), chatID, "❌ Ошибка при создании заявки.", MainMenuKeyboard(tz, pendingCount))
 		}
 
-		// Notify the inviter that they have a new request
+		// Resolve both sides' names for friendly messaging.
+		inviteeName := h.ResolveName(ctx.Context(), chatID)
+		inviterName := h.ResolveName(ctx.Context(), inviterID)
+
+		// Notify the inviter that they have a new request, WITH a friendly name.
 		_ = h.send(ctx.Context(), inviterID,
-			fmt.Sprintf("🔔 <b>Новая заявка в друзья!</b>\n\nПользователь %d хочет стать вашим другом.", chatID),
+			fmt.Sprintf("🔔 <b>Новая заявка в друзья!</b>\n\n<b>%s</b> хочет стать вашим другом.", inviteeName),
 			PendingFriendKeyboard(chatID))
 
 		tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
 		return h.send(ctx.Context(), chatID,
-			fmt.Sprintf("✅ <b>Заявка в друзья отправлена!</b>\n\nОжидаем подтверждения от пользователя %d.", inviterID),
+			fmt.Sprintf("✅ <b>Заявка в друзья отправлена!</b>\n\nОжидаем подтверждения от <b>%s</b>.", inviterName),
 			MainMenuKeyboard(tz, pendingCount))
 	}
 

@@ -65,7 +65,30 @@ func (h *CreatorHandlers) handleQuickTime(ctx *th.Context, query telego.Callback
 		return h.common.showReminderDetail(ctx.Context(), chatID, sessionID, id)
 	}
 
-	// New reminder creation flow
+	// Friend-target creation flow: state = "waiting_time_for:<friendID>"
+	if friendID, ok := parseFriendTargetState(state, "waiting_time_for:"); ok {
+		text, _ := h.state.GetPendingText(ctx.Context(), chatID)
+		if text == "" {
+			text = "Напоминание"
+		}
+		newID, err := h.service.AddReminderForFriend(ctx.Context(), chatID, friendID, text, t)
+		if err != nil {
+			return h.common.reportError(ctx.Context(), chatID, sessionID, MsgSaveError, nil)
+		}
+
+		// Notify the friend immediately
+		userLoc := h.service.GetUserLocation(ctx.Context(), chatID)
+		authorName := h.common.ResolveName(ctx.Context(), chatID)
+		friendNotification := fmt.Sprintf("🔔 <b>Новое напоминание от %s!</b>\n\n📝 %s\n⏰ %s",
+			authorName, text, t.In(userLoc).Format("02.01.2006 15:04"))
+		_ = h.common.send(ctx.Context(), friendID, friendNotification, nil)
+
+		friendName := h.common.ResolveName(ctx.Context(), friendID)
+		confirmation := fmt.Sprintf("✅ <b>Напоминание для %s сохранено!</b>", friendName)
+		return h.common.finalizeReminderCreation(ctx.Context(), chatID, sessionID, newID, t, confirmation)
+	}
+
+	// New reminder creation flow (self)
 	text, _ := h.state.GetPendingText(ctx.Context(), chatID)
 	if text == "" {
 		text = "Напоминание"
@@ -106,7 +129,9 @@ func (h *CreatorHandlers) handleRepeat(ctx *th.Context, query telego.CallbackQue
 			cancelKb = CancelKeyboard().(*telego.InlineKeyboardMarkup)
 		}
 		return h.common.edit(ctx.Context(), chatID, msgID,
-			"⚙️ <b>Введите интервал повторения.</b>\n\nПримеры:\n• 2 часа\n• 3 дня\n• 15 минут",
+			`⚙️ <b>Введите интервал повторения.</b>
+
+`+MsgIntervalExamples,
 			cancelKb)
 	}
 
@@ -208,7 +233,7 @@ func (h *CreatorHandlers) handleTextNew(ctx *th.Context, chatID int64, sessionID
 	_ = h.state.SetWaitingForTimeState(ctx.Context(), chatID)
 
 	return h.common.edit(ctx.Context(), chatID, sessionID,
-		"✅ <b>Текст сохранён!</b>\n\nКогда напомнить?\n\nПримеры:\n• через 30 минут\n• завтра в 15:04\n• 25 марта в 14:30",
+		"✅ <b>Текст сохранён!</b>\n\n"+MsgAskTime,
 		QuickTimeKeyboard().(*telego.InlineKeyboardMarkup))
 }
 
@@ -222,7 +247,7 @@ func (h *CreatorHandlers) handleTextTime(ctx *th.Context, chatID int64, sessionI
 			kb = QuickTimeKeyboard().(*telego.InlineKeyboardMarkup)
 		}
 		return h.common.edit(ctx.Context(), chatID, sessionID,
-			"❌ <b>Не удалось распознать время</b>\n\nПримеры: <i>через 30 минут, завтра в 15:00, 5 апреля в 19:30</i>",
+			MsgTimeParseError,
 			kb)
 	}
 
