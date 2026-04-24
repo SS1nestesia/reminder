@@ -49,14 +49,21 @@ func (s *ReminderService) GetUserLocation(ctx context.Context, chatID int64) *ti
 	return s.loc
 }
 
-// withReminder fetches a reminder by ID, verifies chatID ownership,
-// calls the mutate function, and persists the result.
+// withReminder fetches a reminder by ID, verifies access for chatID (owner
+// OR author for shared friend reminders), calls the mutate function, and
+// persists the result.
+//
+// Access rule: for self reminders (AuthorID=0), only the owner matches.
+// For friend-authored reminders, either side may edit — this enables
+// recurrence/weekday updates on reminders the author just created for a
+// friend, while still rejecting unrelated users (whose chatID equals
+// neither ChatID nor AuthorID).
 func (s *ReminderService) withReminder(ctx context.Context, chatID, id int64, mutate func(r *storage.Reminder) error) error {
 	r, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	if r.ChatID != chatID {
+	if r.ChatID != chatID && r.AuthorID != chatID {
 		return storage.ErrNotFound
 	}
 	if err := mutate(r); err != nil {
@@ -180,6 +187,12 @@ func (s *ReminderService) GetFriendReminders(ctx context.Context, chatID int64) 
 	return s.repo.GetFriendReminders(ctx, chatID)
 }
 
+// GetOutgoingFriendReminders returns reminders the given user authored
+// for their friends (author_id = chatID AND chat_id != chatID).
+func (s *ReminderService) GetOutgoingFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
+	return s.repo.GetOutgoingFriendReminders(ctx, chatID)
+}
+
 // DeleteFriendReminder deletes a reminder that was created by a friend.
 // Either the owner (chatID == r.ChatID) or the author (chatID == r.AuthorID) can delete.
 func (s *ReminderService) DeleteFriendReminder(ctx context.Context, chatID, id int64) (*storage.Reminder, error) {
@@ -227,4 +240,32 @@ func (s *ReminderService) UpdateFriendReminderTime(ctx context.Context, chatID, 
 		return nil, err
 	}
 	return r, nil
+}
+
+// UpdateTimezoneForReminders recalculates the trigger times for all reminders
+// when a user changes their timezone, preserving the wall-clock time in the new timezone.
+func (s *ReminderService) UpdateTimezoneForReminders(ctx context.Context, chatID int64, oldTZ string) error {
+	oldLoc, err := time.LoadLocation(oldTZ)
+	if err != nil {
+		oldLoc = s.loc
+	}
+	newLoc := s.GetUserLocation(ctx, chatID)
+
+	if oldLoc.String() == newLoc.String() {
+		return nil
+	}
+
+	rems, err := s.repo.GetByChatID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range rems {
+		localTime := r.NotifyAt.In(oldLoc)
+		r.NotifyAt = time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
+			localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(),
+			newLoc).UTC()
+		_ = s.repo.Update(ctx, &r)
+	}
+	return nil
 }

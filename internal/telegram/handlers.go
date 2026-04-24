@@ -118,6 +118,7 @@ func (h *Handlers) RegisterAll(bh *th.BotHandler) {
 		bh.HandleCallbackQuery(h.friend.handleFriendsMenu, th.CallbackDataEqual(CBFriendsMenu))
 		bh.HandleCallbackQuery(h.friend.handleInvite, th.CallbackDataEqual(CBFriendsInvite))
 		bh.HandleCallbackQuery(h.friend.handleFriendRemindersList, th.CallbackDataEqual(CBFriendReminders))
+		bh.HandleCallbackQuery(h.friend.handleMyFriendRemindersList, th.CallbackDataEqual(CBMyFriendReminders))
 		bh.HandleCallbackQuery(h.friend.handleAcceptFriend, th.CallbackDataPrefix(CBPrefixAcceptFriend))
 		bh.HandleCallbackQuery(h.friend.handleRejectFriend, th.CallbackDataPrefix(CBPrefixRejectFriend))
 		bh.HandleCallbackQuery(h.friend.handleConfirmRemoveFriend, th.CallbackDataPrefix(CBPrefixConfirmRemove))
@@ -148,6 +149,12 @@ func (h *Handlers) handleStart(ctx *th.Context, message telego.Message) error {
 	// Check for invite deep link: /start invite_<chatID>
 	args := strings.TrimSpace(strings.TrimPrefix(message.Text, "/start"))
 	if inviterID, ok := core.ParseInvitePayload(args); ok && h.friend != nil {
+		// Verify the inviter actually exists
+		if _, err := h.friend.friends.GetUserInfo(ctx.Context(), inviterID); err != nil {
+			tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
+			return h.send(ctx.Context(), chatID, "❌ Пользователь не найден.", MainMenuKeyboard(tz, pendingCount))
+		}
+
 		// Don't allow self-invite
 		if inviterID == chatID {
 			tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
@@ -158,14 +165,16 @@ func (h *Handlers) handleStart(ctx *th.Context, message telego.Message) error {
 		isFriend, _ := h.friend.friends.IsFriend(ctx.Context(), chatID, inviterID)
 		if isFriend {
 			tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
-			return h.send(ctx.Context(), chatID, "👥 Вы уже друзья!", MainMenuKeyboard(tz, pendingCount))
+			inviterName := h.ResolveName(ctx.Context(), inviterID)
+			return h.send(ctx.Context(), chatID, fmt.Sprintf("👥 Вы уже друзья с <b>%s</b>!", inviterName), MainMenuKeyboard(tz, pendingCount))
 		}
 
 		// Check if pending already
 		hasPending, _ := h.friend.friends.HasPendingRequest(ctx.Context(), chatID, inviterID)
 		if hasPending {
 			tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
-			return h.send(ctx.Context(), chatID, "⏳ Заявка уже отправлена, ожидает подтверждения.", MainMenuKeyboard(tz, pendingCount))
+			inviterName := h.ResolveName(ctx.Context(), inviterID)
+			return h.send(ctx.Context(), chatID, fmt.Sprintf("⏳ Заявка для <b>%s</b> уже отправлена, ожидает подтверждения.", inviterName), MainMenuKeyboard(tz, pendingCount))
 		}
 
 		// Send friend request
@@ -175,14 +184,18 @@ func (h *Handlers) handleStart(ctx *th.Context, message telego.Message) error {
 			return h.send(ctx.Context(), chatID, "❌ Ошибка при создании заявки.", MainMenuKeyboard(tz, pendingCount))
 		}
 
-		// Notify the inviter that they have a new request
+		// Resolve both sides' names for friendly messaging.
+		inviteeName := h.ResolveName(ctx.Context(), chatID)
+		inviterName := h.ResolveName(ctx.Context(), inviterID)
+
+		// Notify the inviter that they have a new request, WITH a friendly name.
 		_ = h.send(ctx.Context(), inviterID,
-			fmt.Sprintf("🔔 <b>Новая заявка в друзья!</b>\n\nПользователь %d хочет стать вашим другом.", chatID),
+			fmt.Sprintf("🔔 <b>Новая заявка в друзья!</b>\n\n<b>%s</b> хочет стать вашим другом.", inviteeName),
 			PendingFriendKeyboard(chatID))
 
 		tz, _ := h.state.GetTimezone(ctx.Context(), chatID)
 		return h.send(ctx.Context(), chatID,
-			fmt.Sprintf("✅ <b>Заявка в друзья отправлена!</b>\n\nОжидаем подтверждения от пользователя %d.", inviterID),
+			fmt.Sprintf("✅ <b>Заявка в друзья отправлена!</b>\n\nОжидаем подтверждения от <b>%s</b>.", inviterName),
 			MainMenuKeyboard(tz, pendingCount))
 	}
 
@@ -217,9 +230,15 @@ func (h *Handlers) handleTimezoneChoice(ctx *th.Context, query telego.CallbackQu
 		return nil
 	}
 
+	oldTzName, _ := h.state.GetTimezone(ctx.Context(), chatID)
+
 	if err := h.state.SetTimezone(ctx.Context(), chatID, tzName); err != nil {
 		h.logger.Error("failed to set timezone", "error", err)
 		return h.edit(ctx.Context(), chatID, msgID, "❌ Ошибка при сохранении часового пояса.", MainMenuKeyboard("", 0).(*telego.InlineKeyboardMarkup))
+	}
+
+	if oldTzName != "" && oldTzName != tzName {
+		_ = h.service.UpdateTimezoneForReminders(ctx.Context(), chatID, oldTzName)
 	}
 
 	_ = h.state.ClearState(ctx.Context(), chatID)
@@ -252,9 +271,15 @@ func (h *Handlers) handleTextTimezone(ctx *th.Context, chatID int64, sessionID i
 		}
 	}
 
+	oldTzName, _ := h.state.GetTimezone(ctx.Context(), chatID)
+
 	if err := h.state.SetTimezone(ctx.Context(), chatID, tzName); err != nil {
 		h.logger.Error("failed to set timezone", "error", err)
 		return h.edit(ctx.Context(), chatID, sessionID, "❌ Ошибка при сохранении часового пояса.", MainMenuKeyboard("", 0).(*telego.InlineKeyboardMarkup))
+	}
+
+	if oldTzName != "" && oldTzName != tzName {
+		_ = h.service.UpdateTimezoneForReminders(ctx.Context(), chatID, oldTzName)
 	}
 
 	_ = h.state.ClearState(ctx.Context(), chatID)

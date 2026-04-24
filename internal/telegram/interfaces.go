@@ -17,6 +17,7 @@ type ReminderServicer interface {
 	GetReminder(ctx context.Context, id int64) (*storage.Reminder, error)
 	GetReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
 	GetFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
+	GetOutgoingFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error)
 	DeleteReminder(ctx context.Context, chatID, id int64) error
 	DeleteFriendReminder(ctx context.Context, chatID, id int64) (*storage.Reminder, error)
 	CompleteReminder(ctx context.Context, chatID, id int64) error
@@ -28,6 +29,7 @@ type ReminderServicer interface {
 	UpdateFriendReminderText(ctx context.Context, chatID, id int64, text string) (*storage.Reminder, error)
 	UpdateFriendReminderTime(ctx context.Context, chatID, id int64, newTime time.Time) (*storage.Reminder, error)
 	GetUserLocation(ctx context.Context, chatID int64) *time.Location
+	UpdateTimezoneForReminders(ctx context.Context, chatID int64, oldTZ string) error
 }
 
 // FriendServicer defines friend management methods used by telegram handlers.

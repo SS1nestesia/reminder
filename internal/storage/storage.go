@@ -66,6 +66,9 @@ type ReminderRepository interface {
 
 	// GetByAuthorAndTarget returns reminders created by authorID for targetChatID.
 	GetByAuthorAndTarget(ctx context.Context, authorID, targetChatID int64) ([]Reminder, error)
+	// GetOutgoingFriendReminders returns every reminder authorID created
+	// for someone else (author_id = authorID AND chat_id != authorID).
+	GetOutgoingFriendReminders(ctx context.Context, authorID int64) ([]Reminder, error)
 	// GetFriendReminders returns all reminders where author_id != 0 for a given chat_id.
 	GetFriendReminders(ctx context.Context, chatID int64) ([]Reminder, error)
 	// ClearAuthor sets author_id = 0 for all reminders where authorID matches.

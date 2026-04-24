@@ -168,6 +168,14 @@ func (m *mockService) GetFriendReminders(_ context.Context, chatID int64) ([]sto
 	return friendRems, nil
 }
 
+func (m *mockService) GetOutgoingFriendReminders(_ context.Context, chatID int64) ([]storage.Reminder, error) {
+	return nil, nil
+}
+
+func (m *mockService) UpdateTimezoneForReminders(_ context.Context, chatID int64, oldTZ string) error {
+	return nil
+}
+
 func (m *mockService) DeleteFriendReminder(_ context.Context, _ int64, _ int64) (*storage.Reminder, error) {
 	return nil, m.deleteErr
 }
