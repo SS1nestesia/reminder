@@ -118,6 +118,7 @@ func (h *Handlers) RegisterAll(bh *th.BotHandler) {
 		bh.HandleCallbackQuery(h.friend.handleFriendsMenu, th.CallbackDataEqual(CBFriendsMenu))
 		bh.HandleCallbackQuery(h.friend.handleInvite, th.CallbackDataEqual(CBFriendsInvite))
 		bh.HandleCallbackQuery(h.friend.handleFriendRemindersList, th.CallbackDataEqual(CBFriendReminders))
+		bh.HandleCallbackQuery(h.friend.handleMyFriendRemindersList, th.CallbackDataEqual(CBMyFriendReminders))
 		bh.HandleCallbackQuery(h.friend.handleAcceptFriend, th.CallbackDataPrefix(CBPrefixAcceptFriend))
 		bh.HandleCallbackQuery(h.friend.handleRejectFriend, th.CallbackDataPrefix(CBPrefixRejectFriend))
 		bh.HandleCallbackQuery(h.friend.handleConfirmRemoveFriend, th.CallbackDataPrefix(CBPrefixConfirmRemove))
