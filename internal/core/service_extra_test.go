@@ -203,3 +203,34 @@ func (c *countingNotifier) DeleteMessage(_ context.Context, _ int64, _ int) erro
 type discardWriter struct{}
 
 func (discardWriter) Write(p []byte) (int, error) { return len(p), nil }
+
+// ==========================================
+// Timezone Shift
+// ==========================================
+
+func TestUpdateTimezoneForReminders(t *testing.T) {
+	s, repo, sess := newTestService()
+	ctx := context.Background()
+
+	// Add reminder in UTC+3 (Europe/Moscow)
+	locMoscow, _ := time.LoadLocation("Europe/Moscow")
+	notifyAtMoscow := time.Date(2026, 4, 24, 10, 0, 0, 0, locMoscow)
+	id, _ := s.AddReminder(ctx, 1, "TZ Test", notifyAtMoscow.UTC())
+
+	_ = sess.SetTimezone(ctx, 1, "Asia/Dubai")
+
+	err := s.UpdateTimezoneForReminders(ctx, 1, "Europe/Moscow")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r, _ := repo.GetByID(ctx, id)
+	
+	// The wall clock time should remain 10:00 but in Asia/Dubai.
+	locDubai, _ := time.LoadLocation("Asia/Dubai")
+	expectedDubai := time.Date(2026, 4, 24, 10, 0, 0, 0, locDubai).UTC()
+
+	if !r.NotifyAt.Equal(expectedDubai) {
+		t.Errorf("NotifyAt = %v, want %v", r.NotifyAt, expectedDubai)
+	}
+}

@@ -28,6 +28,9 @@ func (d *dummyReminderRepo) GetByID(ctx context.Context, id int64) (*storage.Rem
 func (d *dummyReminderRepo) GetByChatID(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
 	return nil, nil
 }
+func (d *dummyReminderRepo) GetOutgoingFriendReminders(ctx context.Context, chatID int64) ([]storage.Reminder, error) {
+	return nil, nil
+}
 func (d *dummyReminderRepo) Delete(ctx context.Context, chatID, id int64) error    { return nil }
 func (d *dummyReminderRepo) DeleteByID(ctx context.Context, id int64) error        { return nil }
 func (d *dummyReminderRepo) Update(ctx context.Context, r *storage.Reminder) error { return nil }

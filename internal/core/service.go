@@ -241,3 +241,31 @@ func (s *ReminderService) UpdateFriendReminderTime(ctx context.Context, chatID, 
 	}
 	return r, nil
 }
+
+// UpdateTimezoneForReminders recalculates the trigger times for all reminders
+// when a user changes their timezone, preserving the wall-clock time in the new timezone.
+func (s *ReminderService) UpdateTimezoneForReminders(ctx context.Context, chatID int64, oldTZ string) error {
+	oldLoc, err := time.LoadLocation(oldTZ)
+	if err != nil {
+		oldLoc = s.loc
+	}
+	newLoc := s.GetUserLocation(ctx, chatID)
+
+	if oldLoc.String() == newLoc.String() {
+		return nil
+	}
+
+	rems, err := s.repo.GetByChatID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+
+	for _, r := range rems {
+		localTime := r.NotifyAt.In(oldLoc)
+		r.NotifyAt = time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
+			localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(),
+			newLoc).UTC()
+		_ = s.repo.Update(ctx, &r)
+	}
+	return nil
+}

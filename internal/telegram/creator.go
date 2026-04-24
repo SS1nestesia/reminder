@@ -58,9 +58,16 @@ func (h *CreatorHandlers) handleQuickTime(ctx *th.Context, query telego.Callback
 
 	// If rescheduling an existing reminder
 	if id, ok := h.state.ParseRescheduleID(state); ok {
-		if err := h.service.RescheduleReminder(ctx.Context(), chatID, id, t); err != nil {
+		updated, err := h.service.UpdateFriendReminderTime(ctx.Context(), chatID, id, t)
+		if err != nil {
 			return h.common.reportError(ctx.Context(), chatID, sessionID, MsgSaveError, nil)
 		}
+
+		if updated != nil && updated.AuthorID != 0 {
+			userLoc := h.service.GetUserLocation(ctx.Context(), chatID)
+			h.common.notifyOtherParty(ctx.Context(), chatID, updated, fmt.Sprintf("⏰ Друг изменил время напоминания на: <b>%s</b>", t.In(userLoc).Format("02.01.2006 15:04")))
+		}
+
 		_ = h.state.ClearState(ctx.Context(), chatID)
 		return h.common.showReminderDetail(ctx.Context(), chatID, sessionID, id)
 	}
@@ -253,9 +260,16 @@ func (h *CreatorHandlers) handleTextTime(ctx *th.Context, chatID int64, sessionI
 
 	// If rescheduling an existing reminder
 	if id, ok := h.state.ParseRescheduleID(state); ok {
-		if err := h.service.RescheduleReminder(ctx.Context(), chatID, id, t); err != nil {
+		updated, err := h.service.UpdateFriendReminderTime(ctx.Context(), chatID, id, t)
+		if err != nil {
 			return h.common.reportError(ctx.Context(), chatID, sessionID, MsgSaveError, nil)
 		}
+
+		if updated != nil && updated.AuthorID != 0 {
+			userLoc := h.service.GetUserLocation(ctx.Context(), chatID)
+			h.common.notifyOtherParty(ctx.Context(), chatID, updated, fmt.Sprintf("⏰ Друг изменил время напоминания на: <b>%s</b>", t.In(userLoc).Format("02.01.2006 15:04")))
+		}
+
 		_ = h.state.ClearState(ctx.Context(), chatID)
 		return h.common.showReminderDetail(ctx.Context(), chatID, sessionID, id)
 	}
